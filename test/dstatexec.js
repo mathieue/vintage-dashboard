@@ -1,19 +1,40 @@
 var expect = require('chai').expect
-, dstatsexec = require('../lib/dstatsexec')
 , sinon      = require('sinon')
-, child_process = require('child_process');
+, rewire = require('rewire');
+
+var dstatsexec = rewire('../lib/dstatsexec')
+
 
 describe("Dstatsexec", function() {
 
-  it("should send data", function() {
+  var sandbox;
 
-    var exec = dstatsexec;
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
 
-    sinon.stub(exec, 'exec', function(){
-      return true;
+    // mocking inside the required module with rewire
+    dstatsexec.__set__("spawn", function() {
+      return {
+        stdout: {
+          on: function (data, cb) {
+            cb('1.0 0.7  97 1.2   0   0');
+          }
+        }
+      }
     });
 
-    exec.on();
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  it("should send data", function(done) {
+
+    dstatsexec(function (data) {
+      console.log(data);
+      done();
+    });
 
   });
 
